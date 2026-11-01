@@ -28,3 +28,8 @@ dist/
 backups/
 img/costume/*.png
 img/portrait/*.png
+
+extension-dist/
+
+# Full-size originals are not needed by the extension (fetched on demand)
+img/

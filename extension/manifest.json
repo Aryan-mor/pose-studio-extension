@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Pose Studio for Gemini & ChatGPT",
+  "version": "3.0.0",
+  "description": "Pick a portrait, costume and pose, then send them with a ready-made prompt straight into Gemini or ChatGPT.",
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": { "default_title": "Open Pose Studio", "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png" } },
+  "permissions": ["scripting"],
+  "host_permissions": [
+    "https://gemini.google.com/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://*.googleusercontent.com/*",
+    "https://*.oaiusercontent.com/*",
+    "https://ai-pose-gallery.pages.dev/*",
+    "https://ai-costume-gallery.pages.dev/*",
+    "https://ai-portrait-gallery.pages.dev/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/*", "thumbs/*"],
+      "matches": ["https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*"]
+    }
+  ]
+}
