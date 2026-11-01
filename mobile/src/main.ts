@@ -134,7 +134,7 @@ const recipe = () => ({
 function refreshPrompt(force = false) {
   if (force) state.promptEdited = false
   if (!state.promptEdited) $<HTMLTextAreaElement>('prompt').value = buildRecipePrompt(recipe(), state.style)
-  $<HTMLButtonElement>('share').disabled = !hasAny()
+  document.querySelectorAll<HTMLButtonElement>('.app').forEach((b) => (b.disabled = !hasAny()))
   $<HTMLButtonElement>('copy').disabled = !hasAny()
 }
 
@@ -286,6 +286,47 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
+/** Draws the prompt as a picture, for apps that keep shared images but drop the shared text. */
+async function promptCard(text: string): Promise<File> {
+  const W = 1080
+  const pad = 56
+  const font = '32px -apple-system, "Segoe UI", Roboto, sans-serif'
+  const measure = document.createElement('canvas').getContext('2d')!
+  measure.font = font
+  const lines: string[] = []
+  for (const para of text.split('\n')) {
+    let line = ''
+    for (const word of para.split(' ')) {
+      const test = line ? `${line} ${word}` : word
+      if (measure.measureText(test).width > W - pad * 2 && line) {
+        lines.push(line)
+        line = word
+      } else line = test
+    }
+    lines.push(line)
+  }
+  const head = ['INSTRUCTIONS', 'Read this card and follow it. Use the other attached photos, in the order they were sent, as the references.']
+  const lineH = 46
+  const H = pad * 2 + 70 + head.length * 0 + lines.length * lineH + 20
+  const c = document.createElement('canvas')
+  c.width = W
+  c.height = H
+  const g = c.getContext('2d')!
+  g.fillStyle = '#ffffff'
+  g.fillRect(0, 0, W, H)
+  g.fillStyle = '#6d28d9'
+  g.font = 'bold 30px -apple-system, "Segoe UI", Roboto, sans-serif'
+  g.fillText(head[0], pad, pad + 20)
+  g.fillStyle = '#52525b'
+  g.font = '24px -apple-system, "Segoe UI", Roboto, sans-serif'
+  g.fillText('Follow this and generate the image from the attached reference photos.', pad, pad + 56)
+  g.fillStyle = '#18181b'
+  g.font = font
+  lines.forEach((l, i) => g.fillText(l, pad, pad + 70 + 46 + i * lineH))
+  const blob = await new Promise<Blob>((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not draw the prompt card'))), 'image/png'))
+  return new File([blob], 'instructions.png', { type: 'image/png' })
+}
+
 let fallbackUrls: string[] = []
 function showFallback(files: File[]) {
   fallbackUrls.forEach((u) => URL.revokeObjectURL(u))
@@ -295,13 +336,15 @@ function showFallback(files: File[]) {
   $('status').classList.remove('err')
 }
 
-async function shareFiles(files: File[], text: string) {
+async function shareFiles(files: File[], text: string, app = '') {
   const copied = await copyText(text)
+  if ($<HTMLInputElement>('cardOn').checked) files = [...files, await promptCard(text)]
   const data: ShareData = { files, text, title: 'Pose Studio' }
   if (navigator.canShare?.(data)) {
     try {
       await navigator.share(data)
-      setStatus(copied ? 'Shared. If the app did not fill in the prompt, paste it. It is copied.' : 'Shared. Paste the prompt in the app if it is empty.')
+      const who = app || 'the app'
+      setStatus(copied ? `Shared. If ${who} did not read the prompt, paste it. It is copied.` : `Shared. Paste the prompt in ${who} if the box is empty.`)
       return
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return setStatus('Share cancelled.')
@@ -311,27 +354,28 @@ async function shareFiles(files: File[], text: string) {
   showFallback(files)
 }
 
-async function withBusy(button: HTMLButtonElement, label: string, run: () => Promise<void>) {
-  const old = button.textContent
-  button.disabled = true
-  button.textContent = label
+async function withBusy(button: HTMLButtonElement, run: () => Promise<void>) {
+  button.classList.add('loading')
   try {
     await run()
   } catch (err) {
     setStatus(err instanceof Error ? err.message : String(err), true)
   } finally {
-    button.textContent = old
+    button.classList.remove('loading')
     refreshPrompt()
     $<HTMLButtonElement>('portraitGo').disabled = photos.length === 0
   }
 }
 
-$('share').onclick = () =>
-  withBusy($<HTMLButtonElement>('share'), 'Loading images…', async () => {
-    setStatus('Loading the full-size images…')
-    const files = await collectFiles()
-    await shareFiles(files, $<HTMLTextAreaElement>('prompt').value.trim())
-  })
+document.querySelectorAll<HTMLButtonElement>('.app').forEach((btn) => {
+  btn.onclick = () =>
+    withBusy(btn, async () => {
+      const app = btn.dataset.app || ''
+      setStatus(app ? `Loading the images. Then pick ${app} in the menu…` : 'Loading the full-size images…')
+      const files = await collectFiles()
+      await shareFiles(files, $<HTMLTextAreaElement>('prompt').value.trim(), app)
+    })
+})
 
 $('copy').onclick = async () => {
   setStatus((await copyText($<HTMLTextAreaElement>('prompt').value.trim())) ? 'Prompt copied.' : 'Could not copy. Select the prompt and copy it manually.', false)
@@ -378,7 +422,7 @@ $<HTMLInputElement>('pfile').onchange = (e) => {
 }
 $('portraitCancel').onclick = closePortraitDialog
 $('portraitGo').onclick = () =>
-  withBusy($<HTMLButtonElement>('portraitGo'), 'Preparing…', async () => {
+  withBusy($<HTMLButtonElement>('portraitGo'), async () => {
     const files = photos.map((p, i) => new File([p.file], `photo-${i + 1}.${p.file.type.split('/')[1] || 'jpg'}`, { type: p.file.type }))
     if (!files.length) return
     const prompt = buildPortraitPrompt(files.length)

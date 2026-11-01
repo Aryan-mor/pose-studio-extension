@@ -32,9 +32,15 @@
         <textarea id="prompt" spellcheck="false" rows="7"></textarea>
         <button class="ghost" id="resetPrompt" type="button">Reset prompt</button>
       </details>
-      <div class="actions">
-        <button class="secondary" id="copy" type="button">Copy prompt</button>
-        <button class="primary" id="share" type="button">Share to AI app</button>
+      <div class="apps" role="group" aria-label="Send to">
+        <button class="app" type="button" data-app="Gemini"><span class="ico gemini">G</span><span class="lbl">Gemini</span></button>
+        <button class="app" type="button" data-app="ChatGPT"><span class="ico chatgpt">C</span><span class="lbl">ChatGPT</span></button>
+        <button class="app" type="button" data-app="Grok"><span class="ico grok">X</span><span class="lbl">Grok</span></button>
+        <button class="app" type="button" data-app=""><span class="ico share"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></span><span class="lbl">Share…</span></button>
+      </div>
+      <div class="tools">
+        <button class="ghost" id="copy" type="button">Copy prompt</button>
+        <label class="chk"><input type="checkbox" id="cardOn" checked /> Also attach the prompt as an image</label>
       </div>
       <p class="status" id="status" role="status"></p>
     </footer>

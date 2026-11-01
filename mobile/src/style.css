@@ -78,8 +78,17 @@ a { color: var(--accent); }
 .bar summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 2px 0; }
 .bar details select, .bar details textarea { margin-top: 8px; }
 .bar textarea { font-size: 12.5px; resize: vertical; }
-.actions { display: flex; gap: 8px; }
-.actions button { flex: 1; }
+.apps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.app { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px 4px; }
+.app .ico { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #fff; }
+.app .lbl { font-size: 12px; font-weight: 600; }
+.ico.gemini { background: linear-gradient(135deg, #4285f4, #9b72cb); }
+.ico.chatgpt { background: #10a37f; }
+.ico.grok { background: #111; border: 1px solid #555; }
+.ico.share { background: var(--accent); }
+.app.loading { opacity: .6; pointer-events: none; }
+.tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.chk { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
 .primary { background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 12px; padding: 12px 14px; font-weight: 650; }
 .secondary { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .filters .secondary { padding: 8px 12px; font-size: 13px; border-radius: 10px; }
