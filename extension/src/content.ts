@@ -1,6 +1,8 @@
+import { ADULT_NOTICE, isAdult } from './adult'
 import { UPDATE_HELP_URL } from './config'
 import { buildPortraitPrompt, buildRecipePrompt, STYLE_PRESETS } from './prompt'
 import { attachFiles, detectSite, enableImageTool, fullSizeCandidates, needsPostSendSnapshot, pressSend, setText, SITE_NAME, snapshotImages, wait, waitForNewImages, type SiteId } from './site'
+import { remoteUrls } from './remote'
 import { CSS } from './styles'
 import type { BgRequest, BgResponse, CostumeItem, PortraitItem, PoseItem, SavedKind, SavedMeta, SlotKey, UploadedImage } from './types'
 
@@ -8,16 +10,6 @@ type AnyItem = PortraitItem | CostumeItem | PoseItem
 
 const ext = (path: string) => chrome.runtime.getURL(path)
 const PAGE = 60
-
-// Full-resolution images live on the original public mirrors; the bundled thumbnail is the fallback.
-function remoteUrl(src: string): string {
-  const clean = src.replace(/^\/+/, '')
-  if (clean.startsWith('img/portrait/')) {
-    return `https://ai-portrait-gallery.pages.dev/img/${clean.slice('img/portrait/'.length).replace(/\.webp$/i, '.png')}`
-  }
-  if (clean.startsWith('img/costume/')) return `https://ai-costume-gallery.pages.dev/${clean}`
-  return `https://ai-pose-gallery.pages.dev/${clean}`
-}
 
 function bg(msg: BgRequest): Promise<BgResponse> {
   return chrome.runtime.sendMessage(msg)
@@ -88,17 +80,6 @@ async function loadJson<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(`Failed to load ${path}`)
   return (await res.json()) as T
 }
-
-/** Items Gemini and ChatGPT will usually refuse (adult-oriented series). */
-function isAdult(tab: SlotKey, it: AnyItem | null): boolean {
-  if (!it) return false
-  if (tab === 'pose') return /sexy|intertwined/i.test((it as PoseItem).体系)
-  if (tab === 'costume') return /sexy|lingerie/i.test((it as CostumeItem).分类)
-  return false
-}
-
-const ADULT_NOTICE =
-  'Gemini, ChatGPT and most hosted AI chats do not allow adult (18+) content. Items marked 18+ (Sexy, Lingerie, Intertwined) will usually be refused with an error. Pick Standard items for reliable results.'
 
 const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC_MAP[c])
@@ -231,7 +212,7 @@ async function init(siteId: SiteId) {
     filter: {
       portrait: { a: '', b: '' },
       costume: { a: '', b: '' },
-      pose: { a: '', b: 'Front' },
+      pose: { a: 'Full Body, Solo · Standard', b: 'Front' },
     } as Record<SlotKey, { a: string; b: string }>,
     picked: { portrait: null, costume: null, pose: null } as Record<SlotKey, AnyItem | null>,
     uploads: {} as Partial<Record<SlotKey, UploadedImage>>,
@@ -530,7 +511,7 @@ async function init(siteId: SiteId) {
         files.push(await dataUrlToFile(saved.dataUrl, `${files.length + 1}-${key}`))
         continue
       }
-      const res = await bg({ type: 'fetchImage', urls: [remoteUrl(it.原图), ext(it.缩略图)] })
+      const res = await bg({ type: 'fetchImage', urls: [...remoteUrls(key, it), ext(it.缩略图)] })
       if (!res.ok || !res.dataUrl) throw new Error(`Could not load the ${key} image (${res.ok ? 'empty' : res.error})`)
       files.push(await dataUrlToFile(res.dataUrl, `${files.length + 1}-${key}`))
     }

@@ -1,0 +1,57 @@
+name: Deploy mobile web app
+
+# Publishes the Android-friendly web app to GitHub Pages. Runs on every push to main that touches the app
+# or its data, so the site updates by itself. Needs Settings → Pages → Source = "GitHub Actions" (set once).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'extension/src/prompt.ts'
+      - 'extension/src/remote.ts'
+      - 'extension/src/adult.ts'
+      - 'extension/src/types.ts'
+      - 'data/*-en.json'
+      - 'thumbs/**'
+      - 'scripts/build-mobile.mjs'
+      - 'scripts/icon-png.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:mobile
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: mobile-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

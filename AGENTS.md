@@ -34,6 +34,14 @@ pnpm build          # typecheck (tsc) + bundle → extension-dist/
 - You can't click the toolbar icon from automation. To test the UI without Chrome loading the extension, serve a copy of `content.js` and `data/` from a throwaway folder, stub `window.chrome` (`runtime.getURL`, `sendMessage`, `onMessage.addListener`), and replace `location.hostname` with `'gemini.google.com'` before `eval`. Check the console for errors, then drive the shadow DOM (`#pose-studio-host`).
 - Nothing here has been tested end to end on live Gemini or ChatGPT without a logged-in user. Say so rather than claiming it works.
 
+## Mobile web app (Android)
+
+`mobile/` is a static web app (Vite, no framework) that shares the images and prompt to the phone's AI apps through `navigator.share`. It reuses `extension/src/prompt.ts`, `remote.ts`, `adult.ts` and `types.ts`.
+
+- Build: `pnpm build:mobile` → `mobile-dist/` (includes `data/*-en.json` and `thumbs/`).
+- Deploy: `.github/workflows/pages.yml` publishes to GitHub Pages on every push to `main` that touches the app, its shared sources, the data or thumbnails. No tag is needed for this (tags are only for the extension release). Pages must be set to the "GitHub Actions" source once: `gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow`.
+- Full-size reference images are fetched from the original galleries; the real paths differ per gallery and are in `extension/src/remote.ts` (verified against the live sites). Both the extension and the mobile app use that file.
+
 ## Code map
 
 | File | Role |

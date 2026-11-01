@@ -33,3 +33,4 @@ extension-dist/
 
 # Full-size originals are not needed by the extension (fetched on demand)
 img/
+mobile-dist/

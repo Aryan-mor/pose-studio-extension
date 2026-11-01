@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f0f14" />
+    <title>Pose Studio</title>
+    <meta name="description" content="Pick a portrait, a costume and a pose, then share them with a ready-made prompt to the Gemini, ChatGPT or Grok app." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+  </head>
+  <body>
+    <header class="top">
+      <h1>Pose Studio</h1>
+      <span class="sp"></span>
+      <a class="link" href="https://github.com/Aryan-mor/pose-studio-extension" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <button class="ghost" id="aboutBtn" type="button">About</button>
+    </header>
+
+    <main class="grid-wrap" id="gridWrap">
+      <nav class="slots" id="slots" aria-label="Choose a portrait, a costume and a pose"></nav>
+      <section class="filters" id="filters"></section>
+      <div class="grid" id="grid"></div>
+      <div id="sentinel"></div>
+    </main>
+
+    <footer class="bar">
+      <details id="promptBox">
+        <summary>Prompt and style</summary>
+        <select id="style" aria-label="Style"></select>
+        <textarea id="prompt" spellcheck="false" rows="7"></textarea>
+        <button class="ghost" id="resetPrompt" type="button">Reset prompt</button>
+      </details>
+      <div class="actions">
+        <button class="secondary" id="copy" type="button">Copy prompt</button>
+        <button class="primary" id="share" type="button">Share to AI app</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </footer>
+
+    <dialog id="portraitDlg">
+      <h2>Create portrait</h2>
+      <p class="hint">Add photos of the same person. Different angles and pictures give the best likeness. They are shared with a prompt that asks for a 4×2 studio portrait sheet.</p>
+      <div class="photos" id="photos"></div>
+      <div class="dlgbar">
+        <span id="photoCount"></span>
+        <span class="sp"></span>
+        <button class="ghost" id="portraitCancel" type="button">Cancel</button>
+        <button class="primary" id="portraitGo" type="button">Share to AI app</button>
+      </div>
+    </dialog>
+
+    <dialog id="aboutDlg">
+      <h2>About</h2>
+      <p><b>Nothing is sent to us.</b> There is no server or tracking. This page runs on your phone. The images and prompt go only to the AI app you choose in the share menu. The only requests it makes are for the reference pictures (from the original public galleries) and its own files.</p>
+      <p>Tip: use your browser's menu and choose <b>Add to Home screen</b> to install it like an app.</p>
+      <p><b>Disclaimer:</b> this is a test project made for educational purposes. We bear no responsibility for how it is used. It is not affiliated with Google, OpenAI, xAI or the original gallery authors.</p>
+      <p>Open source: <a href="https://github.com/Aryan-mor/pose-studio-extension" target="_blank" rel="noopener noreferrer">Aryan-mor/pose-studio-extension</a>. Based on <a href="https://github.com/anhao/ai-pose-gallery-zh" target="_blank" rel="noopener noreferrer">anhao/ai-pose-gallery-zh</a> (GitHub · @anhao_ai). All gallery images belong to their original author ギア (@giaaibusi).</p>
+      <div class="dlgbar"><span class="sp"></span><button class="primary" id="aboutClose" type="button">Close</button></div>
+    </dialog>
+
+    <input type="file" id="file" accept="image/*" hidden />
+    <input type="file" id="pfile" accept="image/*" multiple hidden />
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

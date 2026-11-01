@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p . && node scripts/build-extension.mjs",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "build:mobile": "tsc -p . && node scripts/build-mobile.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",

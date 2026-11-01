@@ -12,6 +12,17 @@
 
 > **Privacy: nothing is sent to us.** There is no server, account, analytics or tracking. Everything runs on your own computer, inside your browser. The images you pick and your prompt go only to the AI site you are using (**Gemini, ChatGPT or Grok**), through your own logged-in session in that tab, exactly as if you had attached them by hand. Your saved results and portraits stay in your browser's local storage and are never uploaded. The only other requests the extension makes are: downloading the reference pictures from the original public galleries (`*.pages.dev`), and asking GitHub for the latest release number to show the update notice. Neither sends any of your data.
 
+## Two ways to use it
+
+| | **Desktop: Chrome extension** | **Android phone: web app** |
+|---|---|---|
+| What it is | An extension for Chrome and other Chromium browsers | A website you can add to your Home screen |
+| Works with | gemini.google.com, chatgpt.com, grok.com in the browser | The Gemini, ChatGPT and Grok **apps** (through Android's Share menu) |
+| What it does for you | Attaches the images, pastes the prompt, picks the image tool, presses send, saves the result | Shares the images and prompt to the app you pick. You press send yourself |
+| Get it | [Install the extension](#install-and-update) | **[Open the web app](https://aryan-mor.github.io/pose-studio-extension/)** |
+
+Chrome on Android cannot run extensions, which is why the phone version is a web app.
+
 Click the toolbar icon on **gemini.google.com**, **chatgpt.com** or **grok.com** and the page is covered by a picker with about 4,300 references: portraits, costumes and poses.
 
 1. Pick a **portrait**, a **costume** and a **pose**. You can also **upload your own image** for any slot.
@@ -40,6 +51,12 @@ It runs on Gemini, ChatGPT and Grok. On any other site the icon shows "N/A". (Gr
 Your saved results and portraits are kept, because they live in the browser, not in that folder.
 
 Works in Chrome and other Chromium browsers (Edge, Brave).
+
+## Android phone web app
+
+Open <https://aryan-mor.github.io/pose-studio-extension/> in Chrome on your phone, pick a portrait, a costume and a pose, then tap **Share to AI app** and choose Gemini, ChatGPT or Grok. The full-size images are attached and the prompt is copied (paste it if the app doesn't fill it in). **Create portrait** works the same way with your own photos. In Chrome's menu choose **Add to Home screen** to install it like an app.
+
+It updates itself: every push to `main` that changes the app is published to GitHub Pages by `.github/workflows/pages.yml`, and the phone picks up the new version on the next visit. Nothing is sent to us here either. The page runs on your phone and shares only to the app you choose.
 
 ## Features
 

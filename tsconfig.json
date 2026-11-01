@@ -10,5 +10,5 @@
     "isolatedModules": true,
     "types": ["chrome", "node"]
   },
-  "include": ["extension/src"]
+  "include": ["extension/src", "mobile/src"]
 }
