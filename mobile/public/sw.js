@@ -1,7 +1,7 @@
 // Offline helper. The app itself (page, scripts, styles) is fetched from the network first, so a new
 // deployment shows up right away; the cached copy is only used when offline. Pictures and data are
 // served from the cache for speed and refreshed in the background.
-const CACHE = 'pose-studio-mobile-v2'
+const CACHE = 'pose-studio-mobile-v4'
 
 self.addEventListener('install', () => self.skipWaiting())
 

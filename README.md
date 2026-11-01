@@ -19,7 +19,7 @@
 | What it is | An extension for Chrome and other Chromium browsers | A website you can add to your Home screen |
 | Works with | gemini.google.com, chatgpt.com, grok.com in the browser | The Gemini, ChatGPT and Grok **apps** (through Android's Share menu) |
 | What it does for you | Attaches the images, pastes the prompt, picks the image tool, presses send, saves the result | Shares the images and prompt to the app you pick. You press send yourself |
-| Get it | [Install the extension](#install-and-update) | **[Open the web app](https://aryan-mor.github.io/pose-studio-extension/)** |
+| Get it | [Install the extension](#install-and-update) | **[Open the web app](https://aipos.aryanmoradi.com/)** |
 
 Chrome on Android cannot run extensions, which is why the phone version is a web app.
 
@@ -54,7 +54,7 @@ Works in Chrome and other Chromium browsers (Edge, Brave).
 
 ## Android phone web app
 
-Open <https://aryan-mor.github.io/pose-studio-extension/> in Chrome on your phone, pick a portrait, a costume and a pose, then tap **Gemini**, **ChatGPT**, **Grok** or **Share…**. Android always shows its own share menu (a website can't pick the app for you), so choose the same app there; the button you tapped reminds you which. The full-size images are attached in order, and the prompt is copied to your clipboard, so paste it into the message box. (Apps such as Gemini keep shared pictures but drop shared text, so the paste step is needed.) The first time you share, a short dialog explains this; it is shown only once. **Your own photos:** tap the active slot a second time, or use **Upload** / **⬆ Upload photo**, to add photos from your gallery or camera. They are saved on your phone and listed first in that tab (under "My photos"), so you can reuse them later; ✕ deletes one. **Create portrait** works the same way with several photos of one person. In Chrome's menu choose **Add to Home screen** to install it like an app.
+Open <https://aipos.aryanmoradi.com/> in Chrome on your phone, pick a portrait, a costume and a pose, then tap **Gemini**, **ChatGPT**, **Grok** or **Share…**. Android always shows its own share menu (a website can't pick the app for you), so choose the same app there; the button you tapped reminds you which. The full-size images are attached in order, and the prompt is copied to your clipboard, so paste it into the message box. (Apps such as Gemini keep shared pictures but drop shared text, so the paste step is needed.) The first time you share, a short dialog explains this; it is shown only once. **Your own photos:** tap the active slot a second time, or use **Upload** / **⬆ Upload photo**, to add photos from your gallery or camera. They are saved on your phone and listed first in that tab (under "My photos"), so you can reuse them later; ✕ deletes one. **Create portrait** works the same way with several photos of one person. In Chrome's menu choose **Add to Home screen** to install it like an app.
 
 It updates itself: every push to `main` that changes the app is published to GitHub Pages by `.github/workflows/pages.yml`, and the phone picks up the new version on the next visit. Nothing is sent to us here either. The page runs on your phone and shares only to the app you choose.
 

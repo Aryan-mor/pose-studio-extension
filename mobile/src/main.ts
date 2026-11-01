@@ -118,6 +118,7 @@ function renderGrid(reset: boolean) {
     state.shown = PAGE
     current = applyFilter()
     $('gridWrap').scrollTop = 0
+    $('gridScroll').scrollTop = 0 // the desktop layout scrolls the grid on its own
   }
   const picked = state.picked[state.tab]
   const slice = current.slice(0, state.shown)
@@ -308,7 +309,7 @@ new IntersectionObserver(
       renderGrid(false)
     }
   },
-  { root: $('gridWrap'), rootMargin: '600px' }
+  { rootMargin: '600px' } // implicit root: works whichever element scrolls
 ).observe($('sentinel'))
 
 $('style').innerHTML = Object.entries(STYLE_PRESETS)
@@ -421,16 +422,63 @@ function firstTimeNotice(copied: boolean): Promise<void> {
   })
 }
 
-let fallbackUrls: string[] = []
-function showFallback(files: File[]) {
-  fallbackUrls.forEach((u) => URL.revokeObjectURL(u))
-  fallbackUrls = files.map((f) => URL.createObjectURL(f))
-  const links = files.map((f, i) => `<a href="${fallbackUrls[i]}" download="${esc(f.name)}">${esc(f.name)}</a>`).join(' · ')
-  $('status').innerHTML = `Sharing is not available here. Save the images (${links}), open your AI app, attach them in this order and paste the prompt (already copied).`
-  $('status').classList.remove('err')
+const SITE_URLS: Record<string, string> = { Gemini: 'https://gemini.google.com/app', ChatGPT: 'https://chatgpt.com/', Grok: 'https://grok.com/' }
+/** Phones and tablets have a working share sheet; everything else is treated as a computer. */
+const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))
+
+async function toPngBlob(file: Blob): Promise<Blob> {
+  if (file.type === 'image/png') return file
+  const bmp = await createImageBitmap(file)
+  const c = document.createElement('canvas')
+  c.width = bmp.width
+  c.height = bmp.height
+  c.getContext('2d')!.drawImage(bmp, 0, 0)
+  bmp.close()
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not convert the image'))), 'image/png'))
+}
+
+let deskUrls: string[] = []
+/** Desktop flow: the chat sites can't be reached through the share menu, so open them and hand over the images and prompt by clipboard or download. */
+function showDesktop(files: File[], text: string, app: string) {
+  deskUrls.forEach((u) => URL.revokeObjectURL(u))
+  deskUrls = files.map((f) => URL.createObjectURL(f))
+  const setDesk = (msg: string, err = false) => {
+    $('deskStatus').textContent = msg
+    $('deskStatus').classList.toggle('err', err)
+  }
+  const name = app || 'your AI site'
+  $('deskTitle').textContent = `Send to ${name}`
+  const open = $<HTMLAnchorElement>('deskOpen')
+  const url = SITE_URLS[app]
+  open.textContent = app ? `Open ${app}` : 'Open your AI site'
+  open.hidden = !url
+  if (url) open.href = url
+  $('deskImgs').innerHTML = files
+    .map((f, i) => `<div class="deskimg"><img src="${deskUrls[i]}" alt="" /><b>Image ${i + 1}</b><div class="row2"><button type="button" class="secondary" data-copyimg="${i}">Copy image</button><a class="secondary" href="${deskUrls[i]}" download="${esc(f.name)}">Save</a></div></div>`)
+    .join('')
+  $('deskImgs').onclick = async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-copyimg]')
+    if (!b) return
+    const i = Number(b.dataset.copyimg)
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': toPngBlob(files[i]) })])
+      setDesk(`Image ${i + 1} copied. Click in the chat box and press Ctrl+V.`)
+    } catch {
+      setDesk('Could not copy the image. Use Save and drag the file into the chat.', true)
+    }
+  }
+  $('deskPrompt').onclick = async () => setDesk((await copyText(text)) ? 'Prompt copied. Click in the chat box and press Ctrl+V.' : 'Could not copy. Copy it from "Prompt and style".', false)
+  $('deskClose').onclick = () => $<HTMLDialogElement>('deskDlg').close()
+  setDesk('')
+  void copyText(text) // ready to paste as soon as the site is open
+  setStatus('')
+  const dlg = $<HTMLDialogElement>('deskDlg')
+  if (!dlg.open) dlg.showModal()
+  setDesk('Prompt copied. Paste it with Ctrl+V after the images.')
 }
 
 async function shareFiles(files: File[], text: string, app = '') {
+  if (!isMobileDevice && app) return showDesktop(files, text, app)
   const copied = await copyText(text)
   await firstTimeNotice(copied) // the tap on "Got it" also gives the browser permission to open the share menu
   const data: ShareData = { files, text, title: 'Pose Studio' }
@@ -445,7 +493,7 @@ async function shareFiles(files: File[], text: string, app = '') {
       // otherwise fall through to the manual path
     }
   }
-  showFallback(files)
+  showDesktop(files, text, app)
 }
 
 async function withBusy(button: HTMLButtonElement, run: () => Promise<void>) {
@@ -528,6 +576,18 @@ $('portraitGo').onclick = () =>
 
 $('buildStamp').textContent = __BUILD__
 $('aboutBtn').onclick = () => $<HTMLDialogElement>('aboutDlg').showModal()
+const extDlg = $<HTMLDialogElement>('extDlg')
+$('extBtn').onclick = () => extDlg.showModal()
+$('extClose').onclick = () => extDlg.close()
+$('deskExt').onclick = (e) => {
+  e.preventDefault()
+  $<HTMLDialogElement>('deskDlg').close()
+  extDlg.showModal()
+}
+$('extCopy').onclick = async () => {
+  const addr = /Edg\//.test(navigator.userAgent) ? 'edge://extensions' : 'chrome://extensions'
+  $('extStatus').textContent = (await copyText(addr)) ? `Copied ${addr}. Paste it in a new tab's address bar.` : `Type ${addr} in a new tab's address bar.`
+}
 $('aboutClose').onclick = () => $<HTMLDialogElement>('aboutDlg').close()
 
 async function loadJson<T>(path: string): Promise<T> {

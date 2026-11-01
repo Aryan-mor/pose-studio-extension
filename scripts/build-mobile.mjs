@@ -10,7 +10,7 @@ const out = path.join(root, 'mobile-dist')
 await build({
   configFile: false,
   root: path.join(root, 'mobile'),
-  base: './', // works under https://USER.github.io/REPO/
+  base: './', // works under any path and on a custom domain
   publicDir: path.join(root, 'mobile/public'),
   logLevel: 'warn',
   define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC') },

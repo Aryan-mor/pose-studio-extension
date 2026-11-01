@@ -15,14 +15,17 @@
       <h1>Pose Studio</h1>
       <span class="sp"></span>
       <a class="link" href="https://github.com/Aryan-mor/pose-studio-extension" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <button class="ghost desktop-only" id="extBtn" type="button">Get the extension</button>
       <button class="ghost" id="aboutBtn" type="button">About</button>
     </header>
 
     <main class="grid-wrap" id="gridWrap">
       <nav class="slots" id="slots" aria-label="Choose a portrait, a costume and a pose"></nav>
       <section class="filters" id="filters"></section>
-      <div class="grid" id="grid"></div>
-      <div id="sentinel"></div>
+      <div class="grid-scroll" id="gridScroll">
+        <div class="grid" id="grid"></div>
+        <div id="sentinel"></div>
+      </div>
     </main>
 
     <footer class="bar">
@@ -54,6 +57,34 @@
         <button class="ghost" id="portraitCancel" type="button">Cancel</button>
         <button class="primary" id="portraitGo" type="button">Share to AI app</button>
       </div>
+    </dialog>
+
+    <dialog id="extDlg">
+      <h2>Install the Chrome extension</h2>
+      <p class="hint">On a computer the extension does everything for you: it attaches the images, fills in the prompt and sends it on the Gemini, ChatGPT or Grok page. Works in Chrome, Edge, Brave and Opera.</p>
+      <ol class="steps">
+        <li><a class="primary linkbtn" href="https://github.com/Aryan-mor/pose-studio-extension/releases/latest/download/pose-studio-extension.zip">Download the extension (.zip)</a></li>
+        <li><b>Extract</b> the zip to a folder you will keep (for example in Documents). Chrome reads the extension from there.</li>
+        <li>Open the extensions page: <button class="secondary" id="extCopy" type="button">Copy chrome://extensions</button> then paste it in a new tab's address bar. Edge users: <code>edge://extensions</code>.</li>
+        <li>Turn on <b>Developer mode</b> (top right), click <b>Load unpacked</b> and choose the extracted folder.</li>
+        <li>Open Gemini, ChatGPT or Grok and click the Pose Studio icon in the toolbar (pin it from the puzzle-piece menu).</li>
+      </ol>
+      <p class="hint">After an update, download the zip again, replace the folder's files and click reload on the extension.</p>
+      <p class="status" id="extStatus" role="status"></p>
+      <div class="dlgbar"><span class="sp"></span><button class="primary" id="extClose" type="button">Close</button></div>
+    </dialog>
+
+    <dialog id="deskDlg">
+      <h2 id="deskTitle">Send to the AI site</h2>
+      <p class="hint">On a computer the share menu can't reach the chat sites, so do it in three steps. Faster: <a href="#" id="deskExt">install the extension</a> and it does all this for you.</p>
+      <ol class="steps">
+        <li><a class="primary linkbtn" id="deskOpen" href="#" target="_blank" rel="noopener noreferrer">Open the site</a></li>
+        <li>Paste the images in this order (click <b>Copy image</b>, then press Ctrl+V in the chat box), or download them and drag them in.</li>
+        <li>Paste the prompt: <button class="secondary" id="deskPrompt" type="button">Copy prompt</button> then Ctrl+V, and send.</li>
+      </ol>
+      <div class="deskimgs" id="deskImgs"></div>
+      <p class="status" id="deskStatus" role="status"></p>
+      <div class="dlgbar"><span class="sp"></span><button class="primary" id="deskClose" type="button">Done</button></div>
     </dialog>
 
     <dialog id="copyDlg">
