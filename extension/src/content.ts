@@ -1,5 +1,5 @@
 import { buildPortraitPrompt, buildRecipePrompt, STYLE_PRESETS } from './prompt'
-import { attachFiles, detectSite, enableImageTool, fullSizeCandidates, pressSend, setText, SITE_NAME, snapshotImages, waitForNewImages, type SiteId } from './site'
+import { attachFiles, detectSite, enableImageTool, fullSizeCandidates, needsPostSendSnapshot, pressSend, setText, SITE_NAME, snapshotImages, wait, waitForNewImages, type SiteId } from './site'
 import { CSS } from './styles'
 import type { BgRequest, BgResponse, CostumeItem, PortraitItem, PoseItem, SavedKind, SavedMeta, SlotKey, UploadedImage } from './types'
 
@@ -97,7 +97,7 @@ function isAdult(tab: SlotKey, it: AnyItem | null): boolean {
 }
 
 const ADULT_NOTICE =
-  'Gemini and ChatGPT do not allow adult (18+) content. Items marked 18+ (Sexy, Lingerie, Intertwined) will usually be refused with an error. Pick Standard items for reliable results.'
+  'Gemini, ChatGPT and most hosted AI chats do not allow adult (18+) content. Items marked 18+ (Sexy, Lingerie, Intertwined) will usually be refused with an error. Pick Standard items for reliable results.'
 
 const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC_MAP[c])
@@ -327,7 +327,7 @@ async function init(siteId: SiteId) {
       ? slice
           .map(
             (it) =>
-              `<button class="card ${sel?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(thumbSrc(it))}" alt="" />${(it as PortraitItem).local ? '<span class="x" role="button" data-del="1" title="Delete">✕</span>' : ''}${isAdult(state.tab, it) ? '<span class="tag18" title="May be refused by Gemini and ChatGPT">18+</span>' : ''}<span class="cap" title="${esc(titleOf(state.tab, it))}">${esc(titleOf(state.tab, it))}</span></button>`
+              `<button class="card ${sel?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(thumbSrc(it))}" alt="" />${(it as PortraitItem).local ? '<span class="x" role="button" data-del="1" title="Delete">✕</span>' : ''}${isAdult(state.tab, it) ? '<span class="tag18" title="May be refused by hosted AI chats">18+</span>' : ''}<span class="cap" title="${esc(titleOf(state.tab, it))}">${esc(titleOf(state.tab, it))}</span></button>`
           )
           .join('')
       : '<div class="empty">No matches</div>'
@@ -560,7 +560,9 @@ async function init(siteId: SiteId) {
     await attachFiles(siteId, files)
     await setText(siteId, prompt)
     // Start watching before send so a fast result is never missed.
-    const watcher = save ? captureAndSave(save.kind, before, prompt, save.name) : null
+    // Sites with broad result selectors: the user's own uploads appear right after send, so exclude them first.
+    const startWatcher = () => (save ? captureAndSave(save.kind, before, prompt, save.name) : null)
+    let watcher: Promise<number> | null = needsPostSendSnapshot(siteId) ? null : startWatcher()
     watcher?.catch(() => {}) // reported below; avoids an unhandled rejection if send fails first
     if (!auto) {
       setBusy(false)
@@ -569,6 +571,12 @@ async function init(siteId: SiteId) {
     } else {
       toast('Waiting for uploads, then sending…', false, 0)
       await pressSend(siteId)
+    }
+    if (needsPostSendSnapshot(siteId) && save) {
+      await wait(4000)
+      for (const src of snapshotImages(siteId)) before.add(src)
+      watcher = startWatcher()
+      watcher?.catch(() => {})
     }
     if (!watcher || !save) {
       setBusy(false)

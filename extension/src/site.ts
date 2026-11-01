@@ -1,17 +1,21 @@
 // Drives the native Gemini / ChatGPT composer: attach images, fill text, press send.
 
-export type SiteId = 'gemini' | 'chatgpt'
+export type SiteId = 'gemini' | 'chatgpt' | 'grok'
 
 export function detectSite(): SiteId | null {
   const h = location.hostname
   if (h === 'gemini.google.com') return 'gemini'
   if (h === 'chatgpt.com' || h === 'chat.openai.com') return 'chatgpt'
+  if (h === 'grok.com') return 'grok'
   return null
 }
 
-export const SITE_NAME: Record<SiteId, string> = { gemini: 'Gemini', chatgpt: 'ChatGPT' }
+export const SITE_NAME: Record<SiteId, string> = { gemini: 'Gemini', chatgpt: 'ChatGPT', grok: 'Grok' }
 
+// To support another chat site: add its id above, then one entry in each of the four tables below
+// (EDITOR_SELECTORS, SEND_SELECTORS, RESULT_SELECTORS, TOOL_BUTTONS), plus the host in manifest.json.
 const EDITOR_SELECTORS: Record<SiteId, string[]> = {
+  grok: ['div.tiptap.ProseMirror[contenteditable="true"]', '[contenteditable="true"][role="combobox"]'],
   chatgpt: ['#prompt-textarea', 'div.ProseMirror[contenteditable="true"]', 'textarea[name="prompt-textarea"]'],
   gemini: [
     'rich-textarea .ql-editor[contenteditable="true"]',
@@ -21,6 +25,7 @@ const EDITOR_SELECTORS: Record<SiteId, string[]> = {
 }
 
 const SEND_SELECTORS: Record<SiteId, string[]> = {
+  grok: ['button[type="submit"][aria-label="Submit"]', 'button[aria-label="Submit"]', 'button[type="submit"]'],
   chatgpt: ['button[data-testid="send-button"]', '#composer-submit-button', 'button[aria-label="Send prompt"]'],
   gemini: [
     'button.send-button',
@@ -132,6 +137,8 @@ export async function pressSend(site: SiteId, timeoutMs = 120_000): Promise<void
 // ---------- capturing generated images ----------
 
 const RESULT_SELECTORS: Record<SiteId, string[]> = {
+  // Grok's reply markup is broad, so its own uploaded images are excluded with a post-send snapshot instead.
+  grok: ['main img'],
   chatgpt: ['[data-message-author-role="assistant"] img', 'img[alt*="Generated" i]'],
   gemini: ['model-response img', 'generated-image img', 'single-image img', '.response-container img', 'img[alt*="generated" i]'],
 }
@@ -207,6 +214,7 @@ function composerRoot(editor: HTMLElement): ParentNode {
 }
 
 const TOOL_BUTTONS: Record<SiteId, { selectors: string[]; text: RegExp }> = {
+  grok: { selectors: [], text: /^$/ },
   chatgpt: {
     selectors: ['[data-testid="composer-plus-btn"]', 'button[aria-label*="Add files" i]', 'button[aria-label*="Attach" i]'],
     text: /^\s*(add files and more|tools)\s*$/i,
@@ -222,6 +230,7 @@ const TOOL_BUTTONS: Record<SiteId, { selectors: string[]; text: RegExp }> = {
  * site's menu wasn't found (the caller carries on, since the prompt still asks for an image).
  */
 export async function enableImageTool(site: SiteId): Promise<boolean> {
+  if (site === 'grok') return true // Grok has no separate image tool; the prompt is enough
   const editor = await findEditor(site)
   const root = composerRoot(editor)
 
@@ -249,3 +258,8 @@ export async function enableImageTool(site: SiteId): Promise<boolean> {
   await sleep(500)
   return true
 }
+
+/** Sites whose result selector is broad also match the user's own just-sent uploads, so snapshot again after sending. */
+export const needsPostSendSnapshot = (site: SiteId): boolean => site === 'grok'
+
+export const wait = sleep

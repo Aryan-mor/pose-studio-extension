@@ -1,6 +1,6 @@
 # Notes for AI agents working on this repo
 
-Chrome (Manifest V3) extension that sends a portrait, costume and pose into Gemini or ChatGPT. Read `README.md` for what it does. This file covers what you need to change and ship it safely.
+Chrome (Manifest V3) extension that sends a portrait, costume and pose into Gemini, ChatGPT or Grok. Read `README.md` for what it does. This file covers what you need to change and ship it safely.
 
 ## Releasing: a release needs a version tag
 
@@ -44,6 +44,16 @@ pnpm build          # typecheck (tsc) + bundle → extension-dist/
 | `extension/src/prompt.ts` | Style presets and prompt builders |
 | `extension/src/styles.ts` | Overlay CSS |
 | `scripts/build-extension.mjs` | Build: bundles, copies `data/*-en.json` and `thumbs/`, generates icons |
+
+## Adding a chat site
+
+1. Add the id to `SiteId`, `SITE_NAME` and `detectSite()` in `extension/src/site.ts`.
+2. Add one entry to each table there: `EDITOR_SELECTORS`, `SEND_SELECTORS`, `RESULT_SELECTORS`, `TOOL_BUTTONS` (TypeScript will flag missing ones).
+3. Add the host to `host_permissions`, `content_scripts.matches` and `web_accessible_resources.matches` in `extension/manifest.json`, plus the host that serves its generated images.
+4. Inspect the real page first (logged-out is fine) for the editor and submit button. Don't guess selectors for sites you can't inspect. If the result selector is broad, set `needsPostSendSnapshot`.
+5. Build, run the stub test, then tag a release (see above).
+
+Sites that need a sign-in to even show the composer (for example Copilot) can't be verified without a user.
 
 ## Pitfalls we already hit
 

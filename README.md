@@ -1,15 +1,15 @@
-# Pose Studio for Gemini & ChatGPT (Chrome extension)
+# Pose Studio for AI Chats (Chrome extension)
 
 > **Disclaimer:** this is only a **test project made for educational purposes**. It is provided as is, with no warranty, and **we bear no responsibility** for how it is used or for anything that results from using it (including any account issues with the sites it works with). It is not affiliated with or endorsed by Google, OpenAI, or the original gallery authors.
 
-Click the toolbar icon on **gemini.google.com** or **chatgpt.com** and the page is covered by a picker with about 4,300 references: portraits, costumes and poses.
+Click the toolbar icon on **gemini.google.com**, **chatgpt.com** or **grok.com** and the page is covered by a picker with about 4,300 references: portraits, costumes and poses.
 
 1. Pick a **portrait**, a **costume** and a **pose**. You can also **upload your own image** for any slot.
 2. Choose a style preset. The prompt is generated, and you can edit it.
 3. Press **Send**. The extension selects the **Create image** tool, attaches the images in order (Image 1/2/3 match the prompt), pastes the prompt and presses send. All of this happens behind a progress screen, so you never see the chat page.
 4. When the image arrives, it is saved on your device and shown to you.
 
-It only runs on Gemini and ChatGPT. On any other site the icon shows "N/A".
+It runs on Gemini, ChatGPT and Grok. On any other site the icon shows "N/A". (Grok has no separate image tool, so there the prompt alone asks for the image.)
 
 ## Install (no coding needed)
 
@@ -19,7 +19,7 @@ It only runs on Gemini and ChatGPT. On any other site the icon shows "N/A".
 4. Turn on **Developer mode** (top right).
 5. Click **Load unpacked** and select the unzipped folder, the one that contains `manifest.json`.
 6. Click the puzzle-piece icon in the toolbar and **pin** Pose Studio.
-7. Open [gemini.google.com](https://gemini.google.com) or [chatgpt.com](https://chatgpt.com), sign in, and click the Pose Studio icon.
+7. Open [gemini.google.com](https://gemini.google.com), [chatgpt.com](https://chatgpt.com) or [grok.com](https://grok.com), sign in, and click the Pose Studio icon.
 
 **Updating:** download the newer zip, unzip it over the old folder (or into a new one), then click the reload icon on the extension's card in `chrome://extensions`.
 
@@ -33,7 +33,11 @@ Works in Chrome and other Chromium browsers (Edge, Brave).
 - **Create image tool:** selected automatically before sending (can be turned off with the checkbox).
 - Capture is best effort. It reads the assistant's reply on the page, so keep the chat tab open until the image appears (up to 8 minutes).
 
-If Gemini or ChatGPT change their page markup, the selectors at the top of `extension/src/site.ts` may need updating.
+## Adding another site
+
+Each site is a few selectors in `extension/src/site.ts` (message box, send button, result images, optional tool menu) plus its host in `extension/manifest.json`. See `AGENTS.md`.
+
+If a site changes its page markup, the selectors at the top of `extension/src/site.ts` may need updating.
 
 ## Build from source
 
