@@ -2,6 +2,10 @@
   <img src="assets/banner.svg" alt="Pose Studio: portrait + costume + pose = result, sent to Gemini, ChatGPT or Grok" width="100%">
 </p>
 
+<p align="center">
+  <a href="#install-and-update"><b>⬇ How to install and update</b></a>
+</p>
+
 # Pose Studio for AI Chats (Chrome extension)
 
 > **Disclaimer:** this is only a **test project made for educational purposes**. It is provided as is, with no warranty, and **we bear no responsibility** for how it is used or for anything that results from using it (including any account issues with the sites it works with). It is not affiliated with or endorsed by Google, OpenAI, or the original gallery authors.
