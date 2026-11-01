@@ -12,7 +12,7 @@ Chrome (Manifest V3) extension that sends a portrait, costume and pose into Gemi
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-3. The workflow `.github/workflows/release.yml` runs on the tag. It builds with `RELEASE=1` (minified) and attaches `pose-studio-extension-vX.Y.Z.zip` to a new GitHub release.
+3. The workflow `.github/workflows/release.yml` runs on the tag. It builds with `RELEASE=1` (minified) and attaches `pose-studio-extension.zip` (no version in the name, on purpose) to a new GitHub release. The in-extension update check compares the latest release tag with the installed manifest version, so the tag decides what users are told is new.
 4. Check it finished: `gh run list --limit 3`, then `gh release view vX.Y.Z`. Report any failure to the user instead of retrying blindly.
 
 Rules:

@@ -1,3 +1,4 @@
+import { UPDATE_HELP_URL } from './config'
 import { buildPortraitPrompt, buildRecipePrompt, STYLE_PRESETS } from './prompt'
 import { attachFiles, detectSite, enableImageTool, fullSizeCandidates, needsPostSendSnapshot, pressSend, setText, SITE_NAME, snapshotImages, wait, waitForNewImages, type SiteId } from './site'
 import { CSS } from './styles'
@@ -118,6 +119,11 @@ async function init(siteId: SiteId) {
         <a class="credit" href="https://github.com/anhao/ai-pose-gallery-zh" target="_blank" rel="noopener noreferrer">GitHub · @anhao_ai</a>
         <button class="icon-btn" id="close" title="Close (Esc)">×</button>
       </header>
+      <div class="update" id="update" hidden>
+        <span>🔔 A new version (<b id="updVer"></b>) is available.</span>
+        <a href="${UPDATE_HELP_URL}" target="_blank" rel="noopener noreferrer">How to update</a>
+        <button class="icon-btn" id="updClose" title="Dismiss">×</button>
+      </div>
       <div class="slots" id="slots"></div>
       <div class="filters" id="filters"></div>
       <div class="grid-wrap" id="gridWrap"><div class="grid" id="grid"></div><div id="sentinel" style="height:1px"></div></div>
@@ -604,8 +610,6 @@ async function init(siteId: SiteId) {
     const prompt = $<HTMLTextAreaElement>('prompt').value.trim()
     const auto = $<HTMLInputElement>('auto').checked
     const save = $<HTMLInputElement>('saveLocal').checked
-    const adult = (['pose', 'costume'] as const).filter((k) => isAdult(k, state.picked[k]))
-    if (adult.length && !confirm(`Your ${adult.join(' and ')} selection is marked 18+.\n\n${ADULT_NOTICE}\n\nSend anyway?`)) return
     $<HTMLButtonElement>('send').disabled = true
     toast('Loading reference images…', false, 0)
     try {
@@ -682,6 +686,23 @@ async function init(siteId: SiteId) {
     }
   }
 
+  // ---- update notice ----
+  let updateChecked = false
+  const checkForUpdate = async () => {
+    if (updateChecked) return
+    updateChecked = true
+    try {
+      const res = await bg({ type: 'checkUpdate', current: chrome.runtime.getManifest().version })
+      if (res.ok && res.update?.newer) {
+        $('updVer').textContent = `v${res.update.latest}`
+        $('update').hidden = false
+      }
+    } catch {
+      /* offline or rate-limited: just skip the notice */
+    }
+  }
+  $('updClose').onclick = () => ($('update').hidden = true)
+
   // ---- open / close ----
   async function setOpen(open: boolean) {
     if (!open) {
@@ -690,6 +711,7 @@ async function init(siteId: SiteId) {
     }
     applyTheme()
     root.classList.add('open')
+    void checkForUpdate()
     if (!loaded) {
       toast('Loading library…', false, 0)
       try {

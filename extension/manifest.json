@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pose Studio for AI Chats",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Pick a portrait, costume and pose, then send them with a ready-made prompt straight into Gemini, ChatGPT or Grok.",
   "icons": {
     "16": "icons/icon16.png",
@@ -29,7 +29,8 @@
     "https://ai-portrait-gallery.pages.dev/*",
     "https://grok.com/*",
     "https://*.grok.com/*",
-    "https://*.x.ai/*"
+    "https://*.x.ai/*",
+    "https://api.github.com/*"
   ],
   "background": {
     "service_worker": "background.js"

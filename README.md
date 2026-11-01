@@ -11,9 +11,9 @@ Click the toolbar icon on **gemini.google.com**, **chatgpt.com** or **grok.com**
 
 It runs on Gemini, ChatGPT and Grok. On any other site the icon shows "N/A". (Grok has no separate image tool, so there the prompt alone asks for the image.)
 
-## Install (no coding needed)
+## Install and update
 
-1. Open the [**latest release**](../../releases/latest) and download **`pose-studio-extension-vX.Y.Z.zip`** (under *Assets*).
+1. Download [**pose-studio-extension.zip**](https://github.com/Aryan-mor/pose-studio-extension/releases/latest/download/pose-studio-extension.zip) (always the latest release; the file name never changes). All releases are on the [releases page](../../releases).
 2. **Unzip** it somewhere permanent. Chrome reads the extension from this folder, so don't delete it.
 3. In Chrome, open `chrome://extensions`.
 4. Turn on **Developer mode** (top right).
@@ -21,7 +21,13 @@ It runs on Gemini, ChatGPT and Grok. On any other site the icon shows "N/A". (Gr
 6. Click the puzzle-piece icon in the toolbar and **pin** Pose Studio.
 7. Open [gemini.google.com](https://gemini.google.com), [chatgpt.com](https://chatgpt.com) or [grok.com](https://grok.com), sign in, and click the Pose Studio icon.
 
-**Updating:** download the newer zip, unzip it over the old folder (or into a new one), then click the reload icon on the extension's card in `chrome://extensions`.
+**Updating:** when a newer release exists, the Pose Studio overlay shows a **"A new version is available"** banner with a link back to this section. To update:
+
+1. Download the zip again from the same link above.
+2. Unzip it **over the old `pose-studio-extension` folder** and replace the files. The name is the same on purpose.
+3. Open `chrome://extensions` and click the reload icon on the extension's card, then refresh your chat tab.
+
+Your saved results and portraits are kept, because they live in the browser, not in that folder.
 
 Works in Chrome and other Chromium browsers (Edge, Brave).
 
@@ -29,7 +35,7 @@ Works in Chrome and other Chromium browsers (Edge, Brave).
 
 - **Results are saved on your device.** After you send, the extension waits for the new image in the chat and stores it in the extension's own IndexedDB. Nothing is uploaded anywhere. Open **Saved** in the header to view, download or delete results. Untick "Save results on this device" to skip.
 - **Create portrait** (button on the Portrait card, or **+ Create portrait** in the Portrait tab): add one or more photos of a person (up to 8, different angles work best) in the photo picker, then press **Create portrait**. They are sent with a prompt that asks for a 4×2 studio portrait sheet of the same person from 8 angles. The result is saved and shown **first in the Portrait list** under "My portraits". The prompt is `PORTRAIT_PROMPT` in `extension/src/prompt.ts`.
-- **18+ items are flagged.** Some poses (Sexy, Intertwined) and costumes (Sexy, Lingerie) are adult-oriented and are marked **18+**. Gemini and ChatGPT do not allow adult content, so they will usually refuse these with an error. The Pose and Costume tabs show a warning, and sending a flagged item asks you to confirm first. Standard items work reliably. This extension does not bypass any site's content rules.
+- **18+ items are flagged.** Some poses (Sexy, Intertwined) and costumes (Sexy, Lingerie) are adult-oriented and are marked **18+**. Gemini and ChatGPT do not allow adult content, so they will usually refuse these with an error. The Pose and Costume tabs show a warning notice. Nothing blocks or asks before sending. Standard items work reliably. This extension does not bypass any site's content rules.
 - **Create image tool:** selected automatically before sending (can be turned off with the checkbox).
 - Capture is best effort. It reads the assistant's reply on the page, so keep the chat tab open until the image appears (up to 8 minutes).
 
@@ -67,7 +73,7 @@ git tag v3.0.1
 git push origin v3.0.1
 ```
 
-The workflow is `.github/workflows/release.yml`. It sets the manifest version from the tag, builds with minification, and uploads `pose-studio-extension-v3.0.1.zip`. It can also be run manually from the Actions tab, which produces a downloadable build artifact without making a release.
+The workflow is `.github/workflows/release.yml`. It sets the manifest version from the tag, builds with minification, and uploads `pose-studio-extension.zip` (no version in the name, so the download link is stable). It can also be run manually from the Actions tab, which produces a downloadable build artifact without making a release.
 
 ## Original project and credits
 

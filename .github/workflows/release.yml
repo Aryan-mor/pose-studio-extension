@@ -37,7 +37,9 @@ jobs:
 
       - name: Zip
         run: |
-          NAME="pose-studio-extension-${GITHUB_REF_NAME}"
+          # No version in the file or folder name, so a new download simply replaces the old folder
+          # and https://github.com/OWNER/REPO/releases/latest/download/pose-studio-extension.zip never changes.
+          NAME="pose-studio-extension"
           mv extension-dist "$NAME"
           zip -qr "$NAME.zip" "$NAME"
           echo "ZIP=$NAME.zip" >> "$GITHUB_ENV"

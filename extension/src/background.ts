@@ -1,3 +1,4 @@
+import { RELEASES_API } from './config'
 import type { BgRequest, BgResponse, SavedKind, SavedMeta } from './types'
 
 // ---------- IndexedDB (lives in the extension's origin, so Gemini and ChatGPT share it) ----------
@@ -87,6 +88,31 @@ async function fetchFirst(urls: string[]): Promise<BgResponse> {
   return { ok: false, error: lastError }
 }
 
+// ---------- update check (latest GitHub release vs the installed version) ----------
+
+const parseVersion = (v: string) => v.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0)
+function isNewer(latest: string, current: string): boolean {
+  const a = parseVersion(latest)
+  const b = parseVersion(current)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0)
+  }
+  return false
+}
+
+let cachedLatest: { tag: string; at: number } | null = null
+async function checkUpdate(current: string): Promise<BgResponse> {
+  // GitHub allows only 60 anonymous requests an hour, so reuse the answer for a while.
+  if (!cachedLatest || Date.now() - cachedLatest.at > 60 * 60_000) {
+    const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } })
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` }
+    const json = (await res.json()) as { tag_name?: string }
+    cachedLatest = { tag: String(json.tag_name ?? ''), at: Date.now() }
+  }
+  const latest = cachedLatest.tag.replace(/^v/, '')
+  return { ok: true, update: { latest, newer: Boolean(latest) && isNewer(latest, current) } }
+}
+
 async function handle(msg: BgRequest): Promise<BgResponse> {
   try {
     switch (msg.type) {
@@ -98,6 +124,8 @@ async function handle(msg: BgRequest): Promise<BgResponse> {
         return await listImages(msg.kind)
       case 'getImage':
         return await getImage(msg.id)
+      case 'checkUpdate':
+        return await checkUpdate(msg.current)
       case 'deleteImage':
         await tx('readwrite', (s) => s.delete(msg.id))
         return { ok: true }

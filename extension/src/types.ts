@@ -63,7 +63,8 @@ export type BgRequest =
   | { type: 'listImages'; kind?: SavedKind }
   | { type: 'getImage'; id: string }
   | { type: 'deleteImage'; id: string }
+  | { type: 'checkUpdate'; current: string }
 
 export type BgResponse =
-  | { ok: true; dataUrl?: string; id?: string; items?: SavedMeta[] }
+  | { ok: true; dataUrl?: string; id?: string; items?: SavedMeta[]; update?: { latest: string; newer: boolean } }
   | { ok: false; error: string }
