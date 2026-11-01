@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Pose Studio example: a portrait plus a costume plus a pose gives a generated result" width="100%">
+  <img src="assets/banner-example.svg" alt="Pose Studio example: a portrait plus a costume plus a pose gives a generated result" width="100%">
 </p>
 
 <p align="center">
