@@ -40,6 +40,7 @@ pnpm build          # typecheck (tsc) + bundle → extension-dist/
 
 - Build: `pnpm build:mobile` → `mobile-dist/` (includes `data/*-en.json` and `thumbs/`).
 - Deploy: `.github/workflows/pages.yml` publishes to GitHub Pages on every push to `main` that touches the app, its shared sources, the data or thumbnails. No tag is needed for this (tags are only for the extension release). Pages must be set to the "GitHub Actions" source once: `gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow`.
+- The service worker (`mobile/public/sw.js`) fetches the app files network-first so a deploy shows up immediately, and a new worker reloads open pages once. If you change caching, bump `CACHE` so old copies are dropped. The About dialog shows a build time stamp for checking which version is running.
 - Full-size reference images are fetched from the original galleries; the real paths differ per gallery and are in `extension/src/remote.ts` (verified against the live sites). Both the extension and the mobile app use that file.
 
 ## Code map

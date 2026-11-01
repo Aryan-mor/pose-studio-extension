@@ -74,7 +74,7 @@ function renderSlots() {
   $('slots').innerHTML = SLOTS.map(({ key, label }) => {
     const pick = state.picked[key]
     const img = pick ? pick.缩略图 : ''
-    const name = pick ? (isMine(pick) ? 'Your photo' : titleOf(key, pick)) : state.tab === key ? 'Tap again to upload' : 'Tap to choose'
+    const name = pick ? (isMine(pick) ? 'Your photo' : titleOf(key, pick)) : state.tab === key ? 'Tap to upload' : 'Tap to choose'
     return `<div class="slot ${state.tab === key ? 'active' : ''}" data-slot="${key}">
       <div class="thumb" style="${img ? `background-image:url('${esc(img)}')` : ''}">${img ? '' : '+'}</div>
       <div class="label">${label}</div>
@@ -522,6 +522,7 @@ $('portraitGo').onclick = () =>
 
 // ---------- about + startup ----------
 
+$('buildStamp').textContent = __BUILD__
 $('aboutBtn').onclick = () => $<HTMLDialogElement>('aboutDlg').showModal()
 $('aboutClose').onclick = () => $<HTMLDialogElement>('aboutDlg').close()
 

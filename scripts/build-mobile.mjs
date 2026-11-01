@@ -13,6 +13,7 @@ await build({
   base: './', // works under https://USER.github.io/REPO/
   publicDir: path.join(root, 'mobile/public'),
   logLevel: 'warn',
+  define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC') },
   build: { outDir: out, emptyOutDir: true, target: 'es2022' },
 })
 
