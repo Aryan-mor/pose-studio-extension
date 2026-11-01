@@ -10,6 +10,8 @@
 
 > **Disclaimer:** this is only a **test project made for educational purposes**. It is provided as is, with no warranty, and **we bear no responsibility** for how it is used or for anything that results from using it (including any account issues with the sites it works with). It is not affiliated with or endorsed by Google, OpenAI, or the original gallery authors.
 
+> **Privacy: nothing is sent to us.** There is no server, account, analytics or tracking. Everything runs on your own computer, inside your browser. The images you pick and your prompt go only to the AI site you are using (**Gemini, ChatGPT or Grok**), through your own logged-in session in that tab, exactly as if you had attached them by hand. Your saved results and portraits stay in your browser's local storage and are never uploaded. The only other requests the extension makes are: downloading the reference pictures from the original public galleries (`*.pages.dev`), and asking GitHub for the latest release number to show the update notice. Neither sends any of your data.
+
 Click the toolbar icon on **gemini.google.com**, **chatgpt.com** or **grok.com** and the page is covered by a picker with about 4,300 references: portraits, costumes and poses.
 
 1. Pick a **portrait**, a **costume** and a **pose**. You can also **upload your own image** for any slot.
