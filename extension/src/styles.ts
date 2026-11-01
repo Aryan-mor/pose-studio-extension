@@ -71,6 +71,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .photo.add:hover { border-color:var(--accent); color:var(--accent); }
 .modalbar { display:flex; align-items:center; gap:10px; }
 .modalbar .sp { flex:1; }
+.notice { flex-basis:100%; background:color-mix(in srgb, #f59e0b 16%, var(--bg)); border:1px solid #f59e0b; color:var(--fg); border-radius:8px; padding:8px 12px; font-size:12.5px; }
+.tag18 { position:absolute; left:6px; top:6px; background:#dc2626; color:#fff; border-radius:6px; padding:1px 6px; font-size:11px; font-weight:700; }
+.slot .acts button.accent { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
 .link { background:none; border:0; color:var(--accent); font-size:12px; padding:0; text-align:left; }
 .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:2147483647; display:none;
   background:#18181b; color:#fff; padding:10px 16px; border-radius:10px; font:14px system-ui,sans-serif; box-shadow:0 6px 24px #0006; max-width:80vw; }

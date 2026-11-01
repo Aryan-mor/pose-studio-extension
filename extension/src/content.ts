@@ -88,6 +88,17 @@ async function loadJson<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
+/** Items Gemini and ChatGPT will usually refuse (adult-oriented series). */
+function isAdult(tab: SlotKey, it: AnyItem | null): boolean {
+  if (!it) return false
+  if (tab === 'pose') return /sexy|intertwined/i.test((it as PoseItem).体系)
+  if (tab === 'costume') return /sexy|lingerie/i.test((it as CostumeItem).分类)
+  return false
+}
+
+const ADULT_NOTICE =
+  'Gemini and ChatGPT do not allow adult (18+) content. Items marked 18+ (Sexy, Lingerie, Intertwined) will usually be refused with an error. Pick Standard items for reliable results.'
+
 const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC_MAP[c])
 const uniq = (xs: string[]) => [...new Set(xs)].filter(Boolean)
@@ -267,7 +278,7 @@ async function init(siteId: SiteId) {
       return `<div class="slot ${state.tab === key ? 'active' : ''}" data-slot="${key}">
         <div class="thumb" style="${img ? `background-image:url('${esc(img)}')` : ''}">${img ? '' : '+'}</div>
         <div class="meta"><div class="label">${label}</div><div class="name" title="${esc(name)}">${esc(name)}</div>
-        <div class="acts"><button data-act="upload" data-slot="${key}">Upload</button>${img ? `<button data-act="clear" data-slot="${key}">Clear</button>` : ''}</div></div>
+        <div class="acts"><button data-act="upload" data-slot="${key}">Upload</button>${key === 'portrait' ? '<button class="accent" data-act="create" data-slot="portrait" title="Make a new portrait from your photos">+ Create</button>' : ''}${img ? `<button data-act="clear" data-slot="${key}">Clear</button>` : ''}</div></div>
       </div>`
     }).join('')
   }
@@ -281,7 +292,8 @@ async function init(siteId: SiteId) {
       const values = uniq(list.map((it) => fieldsOf(state.tab, it)[idx]))
       return `<select id="${id}"><option value="">${label}</option>${values.map((v) => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`
     }
-    $('filters').innerHTML = `<input id="q" placeholder="Search…" value="${esc(state.query)}" />
+    const notice = state.tab === 'portrait' ? '' : `<div class="notice">⚠ ${ADULT_NOTICE}</div>`
+    $('filters').innerHTML = `${notice}<input id="q" placeholder="Search…" value="${esc(state.query)}" />
       ${sel('fa', labelA, 0, f.a)}${sel('fb', labelB, 1, f.b)}
       ${state.tab === 'portrait' ? '<button class="btn" id="createPortrait" title="Choose one or more photos of a person (different angles work best) and get a studio portrait sheet">+ Create portrait</button>' : ''}
       <span class="count" id="count"></span>`
@@ -315,7 +327,7 @@ async function init(siteId: SiteId) {
       ? slice
           .map(
             (it) =>
-              `<button class="card ${sel?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(thumbSrc(it))}" alt="" />${(it as PortraitItem).local ? '<span class="x" role="button" data-del="1" title="Delete">✕</span>' : ''}<span class="cap" title="${esc(titleOf(state.tab, it))}">${esc(titleOf(state.tab, it))}</span></button>`
+              `<button class="card ${sel?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(thumbSrc(it))}" alt="" />${(it as PortraitItem).local ? '<span class="x" role="button" data-del="1" title="Delete">✕</span>' : ''}${isAdult(state.tab, it) ? '<span class="tag18" title="May be refused by Gemini and ChatGPT">18+</span>' : ''}<span class="cap" title="${esc(titleOf(state.tab, it))}">${esc(titleOf(state.tab, it))}</span></button>`
           )
           .join('')
       : '<div class="empty">No matches</div>'
@@ -373,7 +385,9 @@ async function init(siteId: SiteId) {
     const slotEl = t.closest<HTMLElement>('[data-slot]')
     if (!slotEl) return
     const key = slotEl.dataset.slot as SlotKey
-    if (act?.dataset.act === 'upload') {
+    if (act?.dataset.act === 'create') {
+      openPortraitModal()
+    } else if (act?.dataset.act === 'upload') {
       uploadFor = key
       $<HTMLInputElement>('file').click()
     } else if (act?.dataset.act === 'clear') {
@@ -582,6 +596,8 @@ async function init(siteId: SiteId) {
     const prompt = $<HTMLTextAreaElement>('prompt').value.trim()
     const auto = $<HTMLInputElement>('auto').checked
     const save = $<HTMLInputElement>('saveLocal').checked
+    const adult = (['pose', 'costume'] as const).filter((k) => isAdult(k, state.picked[k]))
+    if (adult.length && !confirm(`Your ${adult.join(' and ')} selection is marked 18+.\n\n${ADULT_NOTICE}\n\nSend anyway?`)) return
     $<HTMLButtonElement>('send').disabled = true
     toast('Loading reference images…', false, 0)
     try {

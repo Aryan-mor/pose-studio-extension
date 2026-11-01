@@ -28,7 +28,8 @@ Works in Chrome and other Chromium browsers (Edge, Brave).
 ## Features
 
 - **Results are saved on your device.** After you send, the extension waits for the new image in the chat and stores it in the extension's own IndexedDB. Nothing is uploaded anywhere. Open **Saved** in the header to view, download or delete results. Untick "Save results on this device" to skip.
-- **Create portrait** (Portrait tab): add one or more photos of a person (up to 8, different angles work best) in the photo picker, then press **Create portrait**. They are sent with a prompt that asks for a 4×2 studio portrait sheet of the same person from 8 angles. The result is saved and shown **first in the Portrait list** under "My portraits". The prompt is `PORTRAIT_PROMPT` in `extension/src/prompt.ts`.
+- **Create portrait** (button on the Portrait card, or **+ Create portrait** in the Portrait tab): add one or more photos of a person (up to 8, different angles work best) in the photo picker, then press **Create portrait**. They are sent with a prompt that asks for a 4×2 studio portrait sheet of the same person from 8 angles. The result is saved and shown **first in the Portrait list** under "My portraits". The prompt is `PORTRAIT_PROMPT` in `extension/src/prompt.ts`.
+- **18+ items are flagged.** Some poses (Sexy, Intertwined) and costumes (Sexy, Lingerie) are adult-oriented and are marked **18+**. Gemini and ChatGPT do not allow adult content, so they will usually refuse these with an error. The Pose and Costume tabs show a warning, and sending a flagged item asks you to confirm first. Standard items work reliably. This extension does not bypass any site's content rules.
 - **Create image tool:** selected automatically before sending (can be turned off with the checkbox).
 - Capture is best effort. It reads the assistant's reply on the page, so keep the chat tab open until the image appears (up to 8 minutes).
 
