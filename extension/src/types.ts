@@ -7,6 +7,8 @@ export interface PoseItem {
   角度: string
   缩略图: string
   原图: string
+  /** A photo the user uploaded (mobile app). */
+  local?: boolean
 }
 
 export interface CostumeItem {
@@ -16,6 +18,8 @@ export interface CostumeItem {
   关键词: string
   缩略图: string
   原图: string
+  /** A photo the user uploaded (mobile app). */
+  local?: boolean
 }
 
 export interface PortraitItem {

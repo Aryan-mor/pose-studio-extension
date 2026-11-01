@@ -1,7 +1,8 @@
 import { ADULT_NOTICE, isAdult } from '../../extension/src/adult'
 import { buildPortraitPrompt, buildRecipePrompt, STYLE_PRESETS } from '../../extension/src/prompt'
 import { remoteUrls } from '../../extension/src/remote'
-import type { CostumeItem, PortraitItem, PoseItem, SlotKey } from '../../extension/src/types'
+import type { CostumeItem, PortraitItem, PoseItem, RecipeState, SlotKey } from '../../extension/src/types'
+import { deletePhoto, listPhotos, putPhoto, type PhotoRecord } from './store'
 import './style.css'
 
 type AnyItem = PortraitItem | CostumeItem | PoseItem
@@ -27,13 +28,19 @@ const uniq = (xs: string[]) => [...new Set(xs)].filter(Boolean)
 let portraits: PortraitItem[] = []
 let costumes: CostumeItem[] = []
 let poses: PoseItem[] = []
+let libraryPortraits: PortraitItem[] = []
+let libraryCostumes: CostumeItem[] = []
+let libraryPoses: PoseItem[] = []
+/** The user's own uploaded photos per slot (newest first), shown at the start of each list. */
+const mine: Record<SlotKey, AnyItem[]> = { portrait: [], costume: [], pose: [] }
+const mineFiles = new Map<string, File>()
+const isMine = (it: AnyItem | null): boolean => Boolean(it && (it as { local?: boolean }).local)
 
 const state = {
   tab: 'portrait' as SlotKey,
   query: '',
   filter: { portrait: { a: '', b: '' }, costume: { a: '', b: '' }, pose: { a: 'Full Body, Solo · Standard', b: 'Front' } } as Record<SlotKey, { a: string; b: string }>,
   picked: { portrait: null, costume: null, pose: null } as Record<SlotKey, AnyItem | null>,
-  uploads: {} as Partial<Record<SlotKey, Upload>>,
   style: 'realistic',
   promptEdited: false,
   shown: PAGE,
@@ -65,15 +72,14 @@ function setStatus(text: string, error = false) {
 
 function renderSlots() {
   $('slots').innerHTML = SLOTS.map(({ key, label }) => {
-    const up = state.uploads[key]
     const pick = state.picked[key]
-    const img = up ? up.url : pick ? pick.缩略图 : ''
-    const name = up ? `Your photo` : pick ? titleOf(key, pick) : 'Tap to choose'
+    const img = pick ? pick.缩略图 : ''
+    const name = pick ? (isMine(pick) ? 'Your photo' : titleOf(key, pick)) : state.tab === key ? 'Tap again to upload' : 'Tap to choose'
     return `<div class="slot ${state.tab === key ? 'active' : ''}" data-slot="${key}">
       <div class="thumb" style="${img ? `background-image:url('${esc(img)}')` : ''}">${img ? '' : '+'}</div>
       <div class="label">${label}</div>
       <div class="name">${esc(name)}</div>
-      <div class="acts"><button type="button" data-act="upload" data-slot="${key}">Photo</button>${img ? `<button type="button" data-act="clear" data-slot="${key}">Clear</button>` : ''}</div>
+      <div class="acts"><button type="button" data-act="upload" data-slot="${key}">Upload</button>${img ? `<button type="button" data-act="clear" data-slot="${key}">Clear</button>` : ''}</div>
     </div>`
   }).join('')
 }
@@ -91,6 +97,7 @@ function renderFilters() {
   $('filters').innerHTML = `${notice}
     <input id="q" type="search" placeholder="Search…" value="${esc(state.query)}" />
     <div class="row">${sel('fa', la, 0, f.a)}${sel('fb', lb, 1, f.b)}
+    <button type="button" class="secondary" id="uploadBtn">⬆ Upload photo</button>
     ${state.tab === 'portrait' ? '<button type="button" class="secondary" id="createPortrait">+ Create portrait</button>' : ''}
     <span class="count" id="count"></span></div>`
 }
@@ -100,7 +107,9 @@ function applyFilter(): AnyItem[] {
   const { a, b } = state.filter[state.tab]
   return listOf(state.tab).filter((it) => {
     const [fa, fb, text] = fieldsOf(state.tab, it)
-    return (!a || fa === a) && (!b || fb === b) && (!q || text.toLowerCase().includes(q))
+    const textOk = !q || text.toLowerCase().includes(q)
+    if (isMine(it)) return textOk // your own photos are not hidden by the series/angle filters
+    return (!a || fa === a) && (!b || fb === b) && textOk
   })
 }
 
@@ -117,19 +126,24 @@ function renderGrid(reset: boolean) {
     ? slice
         .map(
           (it) =>
-            `<button type="button" class="card ${picked?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(it.缩略图)}" alt="${esc(titleOf(state.tab, it))}" />${isAdult(state.tab, it) ? '<span class="tag18">18+</span>' : ''}<span class="cap">${esc(titleOf(state.tab, it))}</span></button>`
+            `<button type="button" class="card ${picked?.id === it.id ? 'sel' : ''}" data-id="${esc(it.id)}"><img loading="lazy" src="${esc(it.缩略图)}" alt="${esc(titleOf(state.tab, it))}" />${isAdult(state.tab, it) ? '<span class="tag18">18+</span>' : ''}${isMine(it) ? '<span class="x" role="button" data-del="1" aria-label="Delete">✕</span>' : ''}<span class="cap">${esc(titleOf(state.tab, it))}</span></button>`
         )
         .join('')
     : '<p class="empty">No matches</p>'
 }
 
-const hasAny = () => SLOTS.some(({ key }) => state.picked[key] || state.uploads[key])
-const recipe = () => ({
-  portrait: state.picked.portrait as PortraitItem | null,
-  costume: state.picked.costume as CostumeItem | null,
-  pose: state.picked.pose as PoseItem | null,
-  uploads: Object.fromEntries(Object.entries(state.uploads).map(([k, v]) => [k, { name: v!.name, url: v!.url }])),
-})
+const hasAny = () => SLOTS.some(({ key }) => state.picked[key])
+/** Own photos are described to the model as plain "uploaded" references, not by a library name. */
+function recipe(): RecipeState {
+  const r: RecipeState = { portrait: null, costume: null, pose: null, uploads: {} }
+  for (const { key } of SLOTS) {
+    const p = state.picked[key]
+    if (!p) continue
+    if (isMine(p)) r.uploads![key] = { name: 'Your photo', url: '' }
+    else (r as unknown as Record<SlotKey, AnyItem | null>)[key] = p
+  }
+  return r
+}
 
 function refreshPrompt(force = false) {
   if (force) state.promptEdited = false
@@ -148,6 +162,10 @@ function renderAll() {
 // ---------- picking ----------
 
 let uploadFor: SlotKey = 'portrait'
+function openUpload(slot: SlotKey) {
+  uploadFor = slot
+  $<HTMLInputElement>('file').click()
+}
 
 $('slots').addEventListener('click', (e) => {
   const t = e.target as HTMLElement
@@ -156,12 +174,9 @@ $('slots').addEventListener('click', (e) => {
   const key = slotEl.dataset.slot as SlotKey
   const act = t.closest<HTMLElement>('[data-act]')?.dataset.act
   if (act === 'upload') {
-    uploadFor = key
-    $<HTMLInputElement>('file').click()
+    openUpload(key)
   } else if (act === 'clear') {
     state.picked[key] = null
-    if (state.uploads[key]) URL.revokeObjectURL(state.uploads[key]!.url)
-    delete state.uploads[key]
     renderSlots()
     renderGrid(false)
     refreshPrompt()
@@ -169,20 +184,95 @@ $('slots').addEventListener('click', (e) => {
     state.tab = key
     state.query = ''
     renderAll()
+  } else {
+    openUpload(key) // a second tap on the active slot opens the photo picker
   }
 })
 
-$<HTMLInputElement>('file').onchange = (e) => {
+async function makeThumb(file: Blob, width = 360): Promise<string> {
+  const bmp = await createImageBitmap(file)
+  const scale = Math.min(1, width / bmp.width)
+  const c = document.createElement('canvas')
+  c.width = Math.round(bmp.width * scale)
+  c.height = Math.round(bmp.height * scale)
+  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+  bmp.close()
+  return c.toDataURL('image/jpeg', 0.82)
+}
+
+function toItem(rec: PhotoRecord): AnyItem {
+  const id = `mine-${rec.id}`
+  const title = `My photo · ${new Date(rec.createdAt).toLocaleDateString()}`
+  const common = { id, 缩略图: rec.thumb, 原图: '', local: true }
+  if (rec.slot === 'portrait') return { ...common, 分区: 'My photos', 发长: '', 标题: title } as PortraitItem
+  if (rec.slot === 'costume') return { ...common, 分类: 'My photos', 服装名称: title, 关键词: '' } as CostumeItem
+  return { ...common, 体系: 'My photos', 姿势编号: '', 分类: '', 姿势名称: title, 角度: 'Front' } as PoseItem
+}
+
+function rebuildLists() {
+  portraits = [...(mine.portrait as PortraitItem[]), ...libraryPortraits]
+  costumes = [...(mine.costume as CostumeItem[]), ...libraryCostumes]
+  poses = [...(mine.pose as PoseItem[]), ...libraryPoses]
+}
+
+async function addPhoto(slot: SlotKey, file: File): Promise<AnyItem> {
+  const rec: PhotoRecord = {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    slot,
+    name: file.name,
+    createdAt: Date.now(),
+    blob: file,
+    thumb: await makeThumb(file),
+  }
+  await putPhoto(rec)
+  const item = toItem(rec)
+  mineFiles.set(item.id, new File([file], file.name, { type: file.type }))
+  mine[slot].unshift(item)
+  return item
+}
+
+/** Photos saved on this device from earlier visits. */
+async function loadMine() {
+  try {
+    for (const rec of await listPhotos()) {
+      const item = toItem(rec)
+      mineFiles.set(item.id, new File([rec.blob], rec.name, { type: rec.blob.type }))
+      mine[rec.slot].push(item)
+    }
+    navigator.storage?.persist?.().catch(() => {}) // ask the browser not to evict them
+  } catch {
+    /* private mode or blocked storage: uploads still work for this visit */
+  }
+  rebuildLists()
+}
+
+async function removeMine(slot: SlotKey, id: string) {
+  mine[slot] = mine[slot].filter((x) => x.id !== id)
+  mineFiles.delete(id)
+  if (state.picked[slot]?.id === id) state.picked[slot] = null
+  await deletePhoto(id.replace(/^mine-/, '')).catch(() => {})
+  rebuildLists()
+  renderAll()
+}
+
+$<HTMLInputElement>('file').onchange = async (e) => {
   const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
+  const files = [...(input.files ?? [])]
   input.value = ''
-  if (!file) return
-  if (state.uploads[uploadFor]) URL.revokeObjectURL(state.uploads[uploadFor]!.url)
-  state.uploads[uploadFor] = { name: file.name, url: URL.createObjectURL(file), file }
-  state.picked[uploadFor] = null
-  renderSlots()
-  renderGrid(false)
-  refreshPrompt()
+  if (!files.length) return
+  try {
+    setStatus('Saving your photo…')
+    let last: AnyItem | null = null
+    for (const file of files) last = await addPhoto(uploadFor, file)
+    rebuildLists()
+    state.tab = uploadFor
+    state.query = ''
+    state.picked[uploadFor] = last
+    renderAll()
+    setStatus(files.length > 1 ? `Saved ${files.length} photos. They stay in your list.` : 'Saved. It stays in your list for later.')
+  } catch (err) {
+    setStatus(err instanceof Error ? err.message : String(err), true)
+  }
 }
 
 $('filters').addEventListener('input', (e) => {
@@ -193,20 +283,19 @@ $('filters').addEventListener('input', (e) => {
   renderGrid(true)
 })
 $('filters').addEventListener('click', (e) => {
-  if ((e.target as HTMLElement).id === 'createPortrait') openPortraitDialog()
+  const id = (e.target as HTMLElement).id
+  if (id === 'createPortrait') openPortraitDialog()
+  else if (id === 'uploadBtn') openUpload(state.tab)
 })
 
 $('grid').addEventListener('click', (e) => {
   const card = (e.target as HTMLElement).closest<HTMLElement>('.card')
   if (!card) return
+  if ((e.target as HTMLElement).closest('[data-del]')) return void removeMine(state.tab, card.dataset.id!)
   const it = current.find((x) => x.id === card.dataset.id)
   if (!it) return
   const key = state.tab
   state.picked[key] = state.picked[key]?.id === it.id ? null : it
-  if (state.uploads[key]) {
-    URL.revokeObjectURL(state.uploads[key]!.url)
-    delete state.uploads[key]
-  }
   renderSlots()
   renderGrid(false)
   refreshPrompt()
@@ -261,13 +350,14 @@ async function fetchImageFile(urls: string[], name: string): Promise<File> {
 async function collectFiles(): Promise<File[]> {
   const files: File[] = []
   for (const { key } of SLOTS) {
-    const up = state.uploads[key]
-    if (up) {
-      files.push(new File([up.file], `${files.length + 1}-${key}.${up.file.type.split('/')[1] || 'png'}`, { type: up.file.type }))
-      continue
-    }
     const it = state.picked[key]
     if (!it) continue
+    if (isMine(it)) {
+      const f = mineFiles.get(it.id)
+      if (!f) throw new Error('Your saved photo could not be read. Upload it again.')
+      files.push(new File([f], `${files.length + 1}-${key}.${f.type.split('/')[1] || 'jpg'}`, { type: f.type }))
+      continue
+    }
     // Full size from the original gallery first, then the bundled thumbnail.
     files.push(await fetchImageFile([...remoteUrls(key, it), it.缩略图], `${files.length + 1}-${key}`))
   }
@@ -444,11 +534,12 @@ async function loadJson<T>(path: string): Promise<T> {
 async function start() {
   setStatus('Loading the library…')
   try {
-    ;[poses, costumes, portraits] = await Promise.all([
+    ;[libraryPoses, libraryCostumes, libraryPortraits] = await Promise.all([
       loadJson<PoseItem[]>('data/pose-en.json'),
       loadJson<CostumeItem[]>('data/costume-en.json'),
       loadJson<PortraitItem[]>('data/portrait-en.json'),
     ])
+    await loadMine()
     setStatus('')
     renderAll()
   } catch (err) {
