@@ -40,7 +40,6 @@
       </div>
       <div class="tools">
         <button class="ghost" id="copy" type="button">Copy prompt</button>
-        <label class="chk"><input type="checkbox" id="cardOn" checked /> Also attach the prompt as an image</label>
       </div>
       <p class="status" id="status" role="status"></p>
     </footer>
@@ -55,6 +54,13 @@
         <button class="ghost" id="portraitCancel" type="button">Cancel</button>
         <button class="primary" id="portraitGo" type="button">Share to AI app</button>
       </div>
+    </dialog>
+
+    <dialog id="copyDlg">
+      <h2 id="copyTitle">Your prompt is copied</h2>
+      <p id="copyMsg"></p>
+      <p class="hint">You will only see this once.</p>
+      <div class="dlgbar"><span class="sp"></span><button class="primary" id="copyOk" type="button">Got it, continue</button></div>
     </dialog>
 
     <dialog id="aboutDlg">

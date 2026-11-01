@@ -370,51 +370,55 @@ async function copyText(text: string): Promise<boolean> {
     await Promise.race([navigator.clipboard.writeText(text), new Promise((_, reject) => setTimeout(() => reject(new Error('clipboard timeout')), 1500))])
     return true
   } catch {
-    const ta = $<HTMLTextAreaElement>('prompt')
+    // Backup: copy from a throwaway text box (the real one may be hidden inside the closed "Prompt and style" section).
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none'
+    document.body.appendChild(ta)
     ta.select()
-    return document.execCommand('copy')
+    ta.setSelectionRange(0, text.length)
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch {
+      ok = false
+    }
+    ta.remove()
+    return ok
   }
 }
 
-/** Draws the prompt as a picture, for apps that keep shared images but drop the shared text. */
-async function promptCard(text: string): Promise<File> {
-  const W = 1080
-  const pad = 56
-  const font = '32px -apple-system, "Segoe UI", Roboto, sans-serif'
-  const measure = document.createElement('canvas').getContext('2d')!
-  measure.font = font
-  const lines: string[] = []
-  for (const para of text.split('\n')) {
-    let line = ''
-    for (const word of para.split(' ')) {
-      const test = line ? `${line} ${word}` : word
-      if (measure.measureText(test).width > W - pad * 2 && line) {
-        lines.push(line)
-        line = word
-      } else line = test
-    }
-    lines.push(line)
+const NOTICE_KEY = 'pose-studio-copy-notice-seen'
+
+/** Shown once, before the very first share: the prompt travels on the clipboard, not with the pictures. */
+function firstTimeNotice(copied: boolean): Promise<void> {
+  try {
+    if (localStorage.getItem(NOTICE_KEY)) return Promise.resolve()
+  } catch {
+    /* storage blocked: show it every time rather than never */
   }
-  const head = ['INSTRUCTIONS', 'Read this card and follow it. Use the other attached photos, in the order they were sent, as the references.']
-  const lineH = 46
-  const H = pad * 2 + 70 + head.length * 0 + lines.length * lineH + 20
-  const c = document.createElement('canvas')
-  c.width = W
-  c.height = H
-  const g = c.getContext('2d')!
-  g.fillStyle = '#ffffff'
-  g.fillRect(0, 0, W, H)
-  g.fillStyle = '#6d28d9'
-  g.font = 'bold 30px -apple-system, "Segoe UI", Roboto, sans-serif'
-  g.fillText(head[0], pad, pad + 20)
-  g.fillStyle = '#52525b'
-  g.font = '24px -apple-system, "Segoe UI", Roboto, sans-serif'
-  g.fillText('Follow this and generate the image from the attached reference photos.', pad, pad + 56)
-  g.fillStyle = '#18181b'
-  g.font = font
-  lines.forEach((l, i) => g.fillText(l, pad, pad + 70 + 46 + i * lineH))
-  const blob = await new Promise<Blob>((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not draw the prompt card'))), 'image/png'))
-  return new File([blob], 'instructions.png', { type: 'image/png' })
+  const dlg = $<HTMLDialogElement>('copyDlg')
+  $('copyTitle').textContent = copied ? 'Your prompt is copied' : 'Copy your prompt'
+  $('copyMsg').innerHTML = copied
+    ? 'The prompt is on your <b>clipboard</b>. When the app opens with your pictures, <b>paste it into the message box</b> (long-press, then Paste) and send.'
+    : 'The prompt could not be copied automatically. Close the share menu and tap <b>Copy prompt</b> first, then paste it into the app after your pictures are attached.'
+  return new Promise((resolve) => {
+    dlg.addEventListener(
+      'close',
+      () => {
+        try {
+          localStorage.setItem(NOTICE_KEY, '1')
+        } catch {
+          /* ignore */
+        }
+        resolve()
+      },
+      { once: true }
+    )
+    $('copyOk').onclick = () => dlg.close()
+    dlg.showModal()
+  })
 }
 
 let fallbackUrls: string[] = []
@@ -428,7 +432,7 @@ function showFallback(files: File[]) {
 
 async function shareFiles(files: File[], text: string, app = '') {
   const copied = await copyText(text)
-  if ($<HTMLInputElement>('cardOn').checked) files = [...files, await promptCard(text)]
+  await firstTimeNotice(copied) // the tap on "Got it" also gives the browser permission to open the share menu
   const data: ShareData = { files, text, title: 'Pose Studio' }
   if (navigator.canShare?.(data)) {
     try {
